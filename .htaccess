@@ -1,0 +1,10 @@
+# Blokir akses langsung ke file & folder sensitif
+<FilesMatch "^(\.env|\.env\.example)$">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+</IfModule>
+
+Options -Indexes

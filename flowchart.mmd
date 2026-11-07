@@ -1,0 +1,79 @@
+%% Flowchart lengkap Sistem Dashboard Bank Syariah Indonesia
+%% Dibuat berdasarkan struktur codebase yang sudah ada
+
+mermaid
+graph TD
+    %% ===== 1. ALUR LOGIN UTAMA =====
+    subgraph LOGIN["Alur Login & Verifikasi OTP"]
+        L1[Auth Login Page: username + password] -->|password benar| L2[Pilih Karyawan + Channel OTP (Email/WA)]
+        L2 -->|OTP terkirim| L3[Input Kode OTP 6 Digit (AJAX)]
+        L3 -->|OTP terverifikasi| L4[Index -> Dashboard Sesuai Role]
+    end
+
+    %% ===== 2. ALUR OTP VIA AJAX =====
+    subgraph OTP_AJAX["Endpoints AJAX OTP"]
+        A1[POST ajax/kirim-otp] -->|generate OTP, hash, kirim email/WA| A2[POST ajax/verifikasi-otp]
+        A2 -->|success: {success:true, redirect:"..."}| R1[Redirect ke Dashboard]
+        A2 -->|fail: {success:false, message:"..."}| L3[Input Ulang OTP / Resend]
+    end
+
+    %% ===== 3. FLOW DATA NASABAH MIKRO =====
+    subgraph MIKRO["Dashboard Segmen Mikro/UMKM"]
+        M1[Input Data Nasabah] -->|simpan ke DB| M2[Data List Nasabah: pagination/search/filter]
+        M2 -->|navigasi| M3[Detail / Approval Nasabah]
+        M3 -->|monitoring angsuran| M4[Monitoring: jadwal cicilan, status bayar]
+        M4 -->|generate jadwal| M5[Generate Otomatis dari Phalon/Tenor]
+        M5 -->|laporan bulanan| M6[Laporan Bulanan + Cetak PDF/Excel]
+        M6 -->|export data| M7[Export ke Excel]
+    end
+
+    %% ===== 4. FLOW DATA KONSUMER =====
+    subgraph KONSUMER["Dashboard Segmen Konsumer"]
+        K1[Data Nasabah Konsumer] -->|pagination filter status| K2[Approval Pengajuan: pending/disetujui/ditolak]
+        K2 -->|checklist dokumen| K3[Checklist Kelengkapan: KTP/KK/Slip Gaji/Jaminan]
+        K3 -->|Chart.js Analytics| K4[Analytics: tren 12 bulan, komposisi status, top produk, rata-rata proses]
+        K4 -->|generate angsuran| K5[Generate Jadwal Angsuran Otomatis dari Phalon/Tenor]
+        K5 -->|jaduh tempo| K6[Jatuh Tempo: Terlambat/H-7/30 hari]
+        K6 -->|monitoring antrean| K7[Monitoring: antrean pending, funnel status, beban petugas]
+        K7 -->|target vs realisasi| K8[Target vs Realisasi per Petugas per Bulan]
+        K8 -->|performa AO| K9[Performa AO: ranking berdasarkan input, approval, nominal]
+        K9 -->|export data| K10[Export PDF/Excel]
+    end
+
+    %% ===== 5. FLOW GADAI/PAWNING =====
+    subgraph PAWNING["Dashboard Segmen Pawning/Gadai"]
+        P1[Input Data Gadai] -->|perhitungan taksiran| P2[Perhitungan: rumus taksiran → Phalon]
+        P2 -->|upload foto barang| P3[Upload Foto: validasi JPG/PNG/WebP]
+        P3 -->|proses pelunasan| P4[Proses Pelunasan oleh Nasabah]
+        P4 -->|proses perpanjangan| P5[Proses Perpanjangan Masa Gadai]
+        P5 -->|proses penebusan| P6[Proses Penebusan Barang Jaminan]
+        P6 -->|proses lelang| P7[Proses Lelang: catatan harga terjual, data pemenang]
+        P7 -->|monitoring jatuh tempo| P8[Monitoring: masa jatuh tempo gadai]
+        P8 -->|outstanding| P9[Outstanding: nilai pinjaman gadai masih berjalan]
+        P9 -->|ujrah| P10[Ujrah: biaya pemeliharaan/penitipan barang]
+        P10 -->|export data| P11[Export PDF/Excel]
+    end
+
+    %% ===== 6. FLOW DASHBOARD ATASAN/ADMIN =====
+    subgraph ATASAN["Dashboard Atasan/Admin: Lintas Segmen"]
+        A1_ringkasan[Ringkasan KPI Gabungan: total nasabah, outstanding, realisasi 3 segmen] -->|monitoring per segmen| A2_monitoring[Monitoring per Mikro/Konsumer/Pawning]
+        A2_monitoring -->|NPF analysis| A3_npf[Analisis NPF: persentase dan distribusi pembiayaan bermasalah]
+        A3_npf -->|outstanding gabungan| A4_outstanding[Outstanding Gabungan Semua Segmen]
+        A4_outstanding -->|insight rule-based| A5_insight[Asisten Insight: ringkasan kondisi portofolio berbasis aturan]
+        A5_insight -->|aktivitas terbaru| A6_aktivitas[Daftar Aktivitas Terbaru: gabungan 3 segmen]
+        A6_aktivitas -->|laporan cross-segment| A7_laporan[Laporan Cross-Segmen]
+    end
+
+    %% ===== 7. CONNECTIONS ANTAR SUBGRAF =====
+    L4 -->|role admin/atasan| ATASAN
+    L4 -->|role mikro| MIKRO
+    L4 -->|role konsumer| KONSUMER
+    L4 -->|role pawning/gadai| PAWNING
+
+    %% ===== 8. NAVIGASI SIDEBAR =====
+    style LOGIN fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style OTP_AJAX fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    style MIKRO fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style KONSUMER fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    style PAWNING fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px
+    style ATASAN fill:#eceff1,rgba(0,0,0,0.1),stroke:#546e7a,stroke-width:2px

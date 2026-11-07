@@ -1,0 +1,10 @@
+# Mencegah eksekusi script di folder upload (hanya boleh disajikan sebagai file)
+<FilesMatch "\.(php|php\d+|phtml|phar|inc|cgi|pl|py|sh|htaccess)$">
+    Require all denied
+</FilesMatch>
+
+RemoveHandler .php .phtml .phar .inc .cgi .pl .py .sh
+php_flag engine off
+AddType text/plain .php .phtml .phar .inc
+
+Options -Indexes
